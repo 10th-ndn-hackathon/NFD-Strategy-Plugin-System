@@ -173,10 +173,19 @@ def build(bld):
                                        'daemon/face/pcap*.cpp',
                                        'daemon/face/unix*.cpp',
                                        'daemon/face/websocket*.cpp',
-                                       'daemon/main.cpp']),
+                                       'daemon/main.cpp',
+                                       'daemon/fw/plugin-strategy.cpp']),
+                                       #, 'daemon/fw/*strategy*.cpp']),
         use='core-objects',
         includes='daemon',
         export_includes='daemon')
+
+    #nfd_strategy_objects = bld.objects(
+    #    target='strategy-objects',
+    #    source=bld.path.ant_glob('daemon/fw/*strategy*.cpp'),
+    #    use='core-objects daemon-objects',
+    #    includes='daemon',
+    #    export_includes='daemon')
 
     if bld.env.HAVE_LIBPCAP:
         nfd_objects.source += bld.path.ant_glob('daemon/face/*ethernet*.cpp')
@@ -197,6 +206,13 @@ def build(bld):
                 target='bin/nfd',
                 source='daemon/main.cpp',
                 use='daemon-objects SYSTEMD')
+
+    bld.shlib(name='nfd-strategy',
+              vnum=VERSION_BASE,
+              cnum=VERSION_BASE,
+              target='nfd-strategy',
+              source=bld.path.ant_glob('daemon/fw/plugin-strategy.cpp'),
+              includes='daemon .')
 
     bld.recurse('tools')
     bld.recurse('tests')

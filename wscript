@@ -25,6 +25,7 @@ NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
 
 from waflib import Context, Logs, Utils
 import os, subprocess
+from pathlib import Path
 
 VERSION = '0.7.1'
 APPNAME = 'nfd'
@@ -180,12 +181,6 @@ def build(bld):
         includes='daemon',
         export_includes='daemon')
 
-    #nfd_strategy_objects = bld.objects(
-    #    target='strategy-objects',
-    #    source=bld.path.ant_glob('daemon/fw/*strategy*.cpp'),
-    #    use='core-objects daemon-objects',
-    #    includes='daemon',
-    #    export_includes='daemon')
 
     if bld.env.HAVE_LIBPCAP:
         nfd_objects.source += bld.path.ant_glob('daemon/face/*ethernet*.cpp')
@@ -210,9 +205,10 @@ def build(bld):
     bld.shlib(name='nfd-strategy',
               vnum=VERSION_BASE,
               cnum=VERSION_BASE,
-              target='nfd-strategy',
+              target='strategy-plugins/nfd-strategy',
               source=bld.path.ant_glob('daemon/fw/plugin-strategy.cpp'),
-              includes='daemon .')
+              includes='daemon .',
+              install_path='{}/{}'.format(bld.env.LIBDIR, "nfd-strategy-plugins"))
 
     bld.recurse('tools')
     bld.recurse('tests')

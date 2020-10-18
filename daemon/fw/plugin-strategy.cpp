@@ -31,6 +31,7 @@ namespace fw {
 
 // This should probably be dynamic (and not at compile time),
 // assuming the target NFD has no clue what strategy you loading
+// (Even if we do this, the registry returned in Strategy is might be different due to extern C
 // NFD_REGISTER_STRATEGY(PluginStrategy);
 
 NFD_LOG_INIT(PluginStrategy);
@@ -48,13 +49,6 @@ PluginStrategy::PluginStrategy(Forwarder& forwarder, const Name& name)
   }
   this->setInstanceName(makeInstanceName(name, getStrategyName()));
 
-  //quick and dirty: read all the shared object files
-  /*namespace fs = std::experimental::filesystem;
-  for (const auto & entry : fs::directory_iterator(SHARED_OBJECT_PATH))
-      {
-          NDN_LOG_DEBUG("Strategy shared objects: " << entry.path());
-          m_sharedObjects.push_back(entry.path());
-       }*/
   NFD_LOG_INFO("Loaded PluginStrategy");
 }
 
@@ -71,7 +65,8 @@ void
 PluginStrategy::afterReceiveInterest(const FaceEndpoint& ingress, const Interest& interest,
                                      const shared_ptr<pit::Entry>& pitEntry)
 {
-
+  NFD_LOG_DEBUG("Received Interest " << interest);
+  NFD_LOG_WARN("My Awesome bug!");
 }
 
 }

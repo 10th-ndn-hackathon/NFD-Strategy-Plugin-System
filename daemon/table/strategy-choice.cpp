@@ -32,6 +32,10 @@
 
 #include <ndn-cxx/util/concepts.hpp>
 
+#include <boost/filesystem.hpp>
+
+#include <dlfcn.h>
+
 namespace nfd {
 namespace strategy_choice {
 
@@ -39,7 +43,14 @@ NDN_CXX_ASSERT_FORWARD_ITERATOR(StrategyChoice::const_iterator);
 
 NFD_LOG_INIT(StrategyChoice);
 
+const std::string StrategyChoice::SHARED_OBJECT_PATH("/usr/local/lib/nfd-strategy-plugins");
+
 using fw::Strategy;
+
+using Func = std::unique_ptr<Strategy>(*)(Forwarder& forwarder);
+using Func2 = Name(*)(void);
+
+namespace fs = boost::filesystem;
 
 static inline bool
 nteHasStrategyChoiceEntry(const name_tree::Entry& nte)
@@ -67,14 +78,6 @@ StrategyChoice::setDefaultStrategy(const Name& strategyName)
   ++m_nItems;
 }
 
-void
-StrategyChoice::insertNewStrategy(const ndn::Name& name, std::unique_ptr<fw::Strategy> strategy)
-{
-  // TODO: check versions etc.
-  //m_loadedStrategies[name] = strategy;
-  m_loadedStrategies.insert(std::make_pair(name, std::move(strategy)));
-}
-
 StrategyChoice::InsertResult
 StrategyChoice::insert(const Name& prefix, const Name& strategyName)
 {
@@ -93,10 +96,47 @@ StrategyChoice::insert(const Name& prefix, const Name& strategyName)
 
   if (strategy == nullptr) {
     NFD_LOG_ERROR("insert(" << prefix << "," << strategyName << ") strategy not registered");
-    NFD_LOG_INFO("trying to find strategy in plug-in strategies");
+
     auto it = m_loadedStrategies.find(strategyName);
     if (it == m_loadedStrategies.end()) {
-      return InsertResult::NOT_REGISTERED;
+      NFD_LOG_INFO("trying to find strategy in plug-in directory");
+
+      if (fs::is_directory(SHARED_OBJECT_PATH)) {
+        for(const auto& e : boost::make_iterator_range(fs::directory_iterator(SHARED_OBJECT_PATH), {}))
+        {
+          if (e.symlink_status().type() == fs::symlink_file) {
+            continue;
+          }
+
+          NFD_LOG_INFO("Loading shared library " << e.path().c_str());
+          auto handle = dlopen(e.path().c_str(), RTLD_LAZY);
+          if (!handle) {
+            NFD_LOG_ERROR(dlerror());
+          }
+
+          auto getStrategyName = (Func2) dlsym(handle, "getStrategyName");
+          if (!getStrategyName) {
+            NFD_LOG_ERROR(dlerror());
+            return InsertResult(InsertResult::EXCEPTION, dlerror());
+          }
+
+          auto strategyName = getStrategyName();
+          NFD_LOG_INFO("Loading strategy " << strategyName);
+          it = m_loadedStrategies.find(strategyName);
+          if (it != m_loadedStrategies.end()) {
+            continue; // We already have an instance of this loaded
+          }
+
+          auto getStrategyInstance = (Func) dlsym(handle, "getStrategyInstance");
+          if (!getStrategyInstance) {
+            NFD_LOG_ERROR(dlerror());
+            return InsertResult(InsertResult::EXCEPTION, dlerror());
+          }
+          auto pluginStrategy = getStrategyInstance(m_forwarder);
+
+          m_loadedStrategies.insert(std::make_pair(strategyName, std::move(pluginStrategy)));
+        }
+      }
     }
     return insertStratFromLoaded(prefix, strategyName);
   }

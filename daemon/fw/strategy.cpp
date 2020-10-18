@@ -90,7 +90,6 @@ Strategy::find(const Name& instanceName)
 bool
 Strategy::canCreate(const Name& instanceName)
 {
-  NFD_LOG_DEBUG("Can Create..");
   return Strategy::find(instanceName) != getRegistry().end();
 }
 

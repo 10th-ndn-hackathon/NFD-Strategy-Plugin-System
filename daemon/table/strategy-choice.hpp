@@ -178,9 +178,6 @@ public: // enumeration
     return this->getRange().end();
   }
 
-  void
-  insertNewStrategy(const ndn::Name& name, std::unique_ptr<fw::Strategy> strategy);
-
 private:
   void
   changeStrategy(Entry& entry,
@@ -201,6 +198,7 @@ private:
   NameTree& m_nameTree;
   size_t m_nItems = 0;
   std::map<Name, std::unique_ptr<fw::Strategy>> m_loadedStrategies;
+  static const std::string SHARED_OBJECT_PATH;
 };
 
 std::ostream&

@@ -58,7 +58,6 @@ public: // registry
     BOOST_ASSERT(strategyName.at(-1).isVersion());
     BOOST_ASSERT(registry.count(strategyName) == 0);
     Registry& registry = getRegistry();
-    std::cout << "Registering strategy: " << strategyName << std::endl;
     registry[strategyName] = [] (auto&&... args) {
       return make_unique<S>(std::forward<decltype(args)>(args)...);
     };

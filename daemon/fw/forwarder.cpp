@@ -35,8 +35,6 @@
 #include <ndn-cxx/lp/pit-token.hpp>
 #include <ndn-cxx/lp/tags.hpp>
 
-#include <dlfcn.h>
-
 namespace nfd {
 
 NFD_LOG_INIT(Forwarder);
@@ -46,9 +44,6 @@ getDefaultStrategyName()
 {
   return fw::BestRouteStrategy2::getStrategyName();
 }
-
-using Func = std::unique_ptr<nfd::fw::Strategy>(*)(Forwarder& forwarder);
-using Func2 = Name(*)(void);
 
 Forwarder::Forwarder(FaceTable& faceTable)
   : m_faceTable(faceTable)
@@ -86,26 +81,6 @@ Forwarder::Forwarder(FaceTable& faceTable)
   });
 
   m_strategyChoice.setDefaultStrategy(getDefaultStrategyName());
-
-  NFD_LOG_INFO("Loading shared library libnfd-strategy.so");
-  auto handle = dlopen("/home/ashlesh/ndn-src/NFD/build/strategy-plugins/libnfd-strategy.so.0.7.1", RTLD_LAZY);
-  if (!handle) {
-    NFD_LOG_ERROR(dlerror());
-  }
-
-  auto getStrategyInstance = (Func) dlsym(handle, "getStrategyInstance");
-  if (!getStrategyInstance) {
-    NFD_LOG_ERROR(dlerror());
-  }
-  auto pluginStrategy = getStrategyInstance(*this);
-
-  auto getStrategyName = (Func2) dlsym(handle, "getStrategyName");
-  if (!getStrategyName) {
-    NFD_LOG_ERROR(dlerror());
-  }
-  auto strategyName = getStrategyName();
-  NFD_LOG_INFO("Loading strategy " << strategyName);
-  m_strategyChoice.insertNewStrategy(strategyName, std::move(pluginStrategy));
 }
 
 Forwarder::~Forwarder() = default;

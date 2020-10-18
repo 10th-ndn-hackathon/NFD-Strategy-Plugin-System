@@ -1,3 +1,73 @@
+# 10th Hackathon Strategy Plugin System
+
+## PluginStrategy
+
+- Added a sample PluginStratey that is not compiled as a part of NFD
+- PluginStrategy is compiled as a shared library and installed in /usr/local/lib/nfd-strategy-plugins
+  - Don't "use" core-objects or daemon object in shlib - strange link errors about overflow and recommendation of using -fPIC
+- Need to put the derived functions in extern "C" because C++ name mangling
+- NFD logger does not seem to work in PluginStrategy - so changed to ndn-cxx logger
+  - But having problems with configuring NDN_LOG for NFD (nfd.conf always overrides)
+  - So added couts as well!
+- Do not try to call registerType (i.e. NFD_REGISTER_STRATEGY) from extern "C" function in PluginStrategy
+  - The registry returned will be different
+  - Have tried making registerType, NFD_REGISTER_STRATEGY also as extern "C"
+
+## StrategyChoice
+
+- When nfdc strategy set triggers insert, we look for strategies in /usr/local/lib/nfd-strategy-plugins
+  - That is if the Strategy is not found in already registered Strategy
+- If Strategy is found with the name in the shared file, it is loaded and created
+
+## Testing
+
+- Compile and install NFD and check that the plugin strategy, libnfd-strategy.so.0.7.1 is located at
+
+   /usr/local/lib/nfd-strategy-plugins/
+
+- Set the following logs in /usr/local/etc/ndn/nfd.conf:
+
+    PluginStrategy TRACE
+    StrategyChoice TRACE
+    Strategy TRACE
+
+- Start NFD and try to set the strategy in a new terminal:
+
+    nfdc strategy set /plugin /localhost/nfd/strategy/plugin/%FD%01
+
+- Check nfdc strategy has the line:
+
+    prefix=/plugin strategy=/localhost/nfd/strategy/plugin/%FD%01
+
+- Send an Interest:
+
+    ndnping -c1 /plugin
+
+- See the lines in cout (or NDN_LOG log if that works for you):
+
+    Received Interest /plugin/ping/12730949938297044207?MustBeFresh&Nonce=1d31d516
+
+- STILL WORKING ON HOW TO UPDATE VERSION OF PLUGINSTRATEGY, FIX BUG, AND, LOAD A REPLACEMENT STRATEGY
+  - Either some bug or some problem in the shared-object!
+
+## Future Work/Conclusion
+
+- Decide on whether to make all Strategies as plugin
+  - Or just have the plugin system as a backup
+- Plugin strategies can be used to deliver quick fixes to existing Strategies
+  - So this is an argument to make all Strategies as plugin so that we don't have to replicate them
+- Plugin system can be used to load experimental Strategies on the testbed
+  - Can test strategies developed in ndnSIM/MiniNDN based publications which were/cannot be not merged in NFD
+- Maybe create a folder such as daemon/fw/strategy-plugins where plugin strategies can be there for wscript to decide
+  - Only compile them when a flag is provided
+
+## Resources
+
+- [Making a Plugin System](http://www.cplusplus.com/articles/48TbqMoL/)
+- [Dynamic Loading Example](https://github.com/xbanks/dynamic-loading-example)
+- [dlsym manpage](https://man7.org/linux/man-pages/man3/dlsym.3.html)
+- [Compiling NFD as shared object](https://github.com/named-data-mobile/android-crew-staging/blob/master/patches/packages/nfd/0.7.0/0002-Build-patches.patch)
+
 # NFD - Named Data Networking Forwarding Daemon
 
 ![Language](https://img.shields.io/badge/C%2B%2B-14-blue.svg)

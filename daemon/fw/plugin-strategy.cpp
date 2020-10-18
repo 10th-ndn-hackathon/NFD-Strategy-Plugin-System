@@ -24,7 +24,8 @@
  */
 
 #include "plugin-strategy.hpp"
-#include "common/logger.hpp"
+#include <ndn-cxx/util/logger.hpp>
+#include <iostream>
 
 namespace nfd {
 namespace fw {
@@ -34,7 +35,9 @@ namespace fw {
 // (Even if we do this, the registry returned in Strategy is might be different due to extern C
 // NFD_REGISTER_STRATEGY(PluginStrategy);
 
-NFD_LOG_INIT(PluginStrategy);
+// NFD_LOG_INIT(PluginStrategy);
+
+NDN_LOG_INIT(nfd.plugin.PluginStrategy);
 
 PluginStrategy::PluginStrategy(Forwarder& forwarder, const Name& name)
   : Strategy(forwarder)
@@ -49,13 +52,14 @@ PluginStrategy::PluginStrategy(Forwarder& forwarder, const Name& name)
   }
   this->setInstanceName(makeInstanceName(name, getStrategyName()));
 
-  NFD_LOG_INFO("Loaded PluginStrategy");
+  NDN_LOG_INFO("Loaded PluginStrategy");
+  std::cout << "\n---------------------Loaded PluginStrategy------------------\n" << std::endl;
 }
 
 const Name&
 PluginStrategy::getStrategyName()
 {
-  static Name strategyName("/localhost/nfd/strategy/plugin/%FD%01");
+  static Name strategyName("/localhost/nfd/strategy/plugin/%FD%03");
   return strategyName;
 }
 
@@ -65,8 +69,8 @@ void
 PluginStrategy::afterReceiveInterest(const FaceEndpoint& ingress, const Interest& interest,
                                      const shared_ptr<pit::Entry>& pitEntry)
 {
-  NFD_LOG_DEBUG("Received Interest " << interest);
-  NFD_LOG_WARN("My Awesome bug!");
+  NDN_LOG_DEBUG("Received Interest " << interest);
+  std::cout << "\n------------------Received Interest " << interest << std::endl;
 }
 
 }

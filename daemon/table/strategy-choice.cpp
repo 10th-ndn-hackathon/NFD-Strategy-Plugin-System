@@ -67,6 +67,14 @@ StrategyChoice::setDefaultStrategy(const Name& strategyName)
   ++m_nItems;
 }
 
+void
+StrategyChoice::insertNewStrategy(const ndn::Name& name, std::unique_ptr<fw::Strategy> strategy)
+{
+  // TODO: check versions etc.
+  //m_loadedStrategies[name] = strategy;
+  m_loadedStrategies.insert(std::make_pair(name, std::move(strategy)));
+}
+
 StrategyChoice::InsertResult
 StrategyChoice::insert(const Name& prefix, const Name& strategyName)
 {
@@ -79,10 +87,50 @@ StrategyChoice::insert(const Name& prefix, const Name& strategyName)
     strategy = Strategy::create(strategyName, m_forwarder);
   }
   catch (const std::invalid_argument& e) {
-    NFD_LOG_ERROR("insert(" << prefix << "," << strategyName << ") cannot create strategy: " << e.what());
+    NFD_LOG_WARN("insert(" << prefix << "," << strategyName << ") cannot create strategy: " << e.what());
     return InsertResult(InsertResult::EXCEPTION, e.what());
   }
 
+  if (strategy == nullptr) {
+    NFD_LOG_ERROR("insert(" << prefix << "," << strategyName << ") strategy not registered");
+    NFD_LOG_INFO("trying to find strategy in plug-in strategies");
+    auto it = m_loadedStrategies.find(strategyName);
+    if (it == m_loadedStrategies.end()) {
+      return InsertResult::NOT_REGISTERED;
+    }
+    return insertStratFromLoaded(prefix, strategyName);
+  }
+
+  name_tree::Entry& nte = m_nameTree.lookup(prefix);
+  Entry* entry = nte.getStrategyChoiceEntry();
+  Strategy* oldStrategy = nullptr;
+  if (entry != nullptr) {
+    if (entry->getStrategyInstanceName() == strategy->getInstanceName()) {
+      NFD_LOG_TRACE("insert(" << prefix << ") not changing " << strategy->getInstanceName());
+      return InsertResult::OK;
+    }
+    oldStrategy = &entry->getStrategy();
+    NFD_LOG_TRACE("insert(" << prefix << ") changing from " << oldStrategy->getInstanceName() <<
+                  " to " << strategy->getInstanceName());
+  }
+  else {
+    oldStrategy = &this->findEffectiveStrategy(prefix);
+    auto newEntry = make_unique<Entry>(prefix);
+    entry = newEntry.get();
+    nte.setStrategyChoiceEntry(std::move(newEntry));
+    ++m_nItems;
+    NFD_LOG_TRACE("insert(" << prefix << ") new entry " << strategy->getInstanceName());
+  }
+
+  this->changeStrategy(*entry, *oldStrategy, *strategy);
+  entry->setStrategy(std::move(strategy));
+  return InsertResult::OK;
+}
+
+StrategyChoice::InsertResult
+StrategyChoice::insertStratFromLoaded(const Name& prefix, const Name& strategyName)
+{
+  std::unique_ptr<Strategy>& strategy = m_loadedStrategies[strategyName];
   if (strategy == nullptr) {
     NFD_LOG_ERROR("insert(" << prefix << "," << strategyName << ") strategy not registered");
     return InsertResult::NOT_REGISTERED;

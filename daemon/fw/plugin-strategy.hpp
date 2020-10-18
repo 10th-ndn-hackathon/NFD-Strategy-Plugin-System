@@ -26,12 +26,15 @@
 #ifndef NFD_DAEMON_FW_MULTICAST_STRATEGY_HPP
 #define NFD_DAEMON_FW_MULTICAST_STRATEGY_HPP
 
+#include "forwarder.hpp"
 #include "strategy.hpp"
 #include "process-nack-traits.hpp"
 #include "retx-suppression-exponential.hpp"
 #include <string>
 #include <iostream>
 #include <experimental/filesystem>
+
+#include <iostream>
 
 namespace nfd {
 namespace fw {
@@ -63,5 +66,24 @@ private:
 
 } // namespace fw
 } // namespace nfd
+
+extern "C" {
+
+std::unique_ptr<nfd::fw::Strategy>
+getStrategyInstance(nfd::Forwarder& forwarder)
+{
+  std::cout << "Registering strategy" << std::endl;
+  return std::make_unique<nfd::fw::PluginStrategy>(forwarder,
+           nfd::fw::PluginStrategy::getStrategyName());
+  // ::nfd::fw::Strategy::registerType<nfd::fw::PluginStrategy>();
+}
+
+ndn::Name
+getStrategyName()
+{
+  return nfd::fw::PluginStrategy::getStrategyName();
+}
+
+}
 
 #endif // NFD_DAEMON_FW_MULTICAST_STRATEGY_HPP

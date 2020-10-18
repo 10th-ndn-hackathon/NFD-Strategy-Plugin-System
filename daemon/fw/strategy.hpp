@@ -29,14 +29,21 @@
 #include "forwarder.hpp"
 #include "table/measurements-accessor.hpp"
 
+#include <iostream>
+
 namespace nfd {
 namespace fw {
+
+extern int g_test1;
 
 /** \brief Represents a forwarding strategy
  */
 class Strategy : noncopyable
 {
 public: // registry
+   typedef std::function<unique_ptr<Strategy>(Forwarder& forwarder, const Name& strategyName)> CreateFunc;
+   typedef std::map<Name, CreateFunc> Registry; // indexed by strategy name
+
   /** \brief Register a strategy type
    *  \tparam S subclass of Strategy
    *  \param strategyName strategy program name, must contain version
@@ -49,12 +56,22 @@ public: // registry
   {
     BOOST_ASSERT(strategyName.size() > 1);
     BOOST_ASSERT(strategyName.at(-1).isVersion());
-    Registry& registry = getRegistry();
     BOOST_ASSERT(registry.count(strategyName) == 0);
+    Registry& registry = getRegistry();
+    std::cout << "Registering strategy: " << strategyName << std::endl;
     registry[strategyName] = [] (auto&&... args) {
       return make_unique<S>(std::forward<decltype(args)>(args)...);
     };
   }
+
+  /*static void
+  registerType(const Name& strategyName, std::unique_ptr<Strategy> strategy)
+  {
+    BOOST_ASSERT(strategyName.size() > 1);
+    BOOST_ASSERT(strategyName.at(-1).isVersion());
+    BOOST_ASSERT(registry.count(strategyName) == 0);
+    registry[strategyName] = ;
+  }*/
 
   /** \return Whether a strategy instance can be created from \p instanceName
    *  \param instanceName strategy instance name, may contain version and parameters
@@ -397,10 +414,7 @@ PUBLIC_WITH_TESTS_ELSE_PROTECTED: // setter
     m_wantNewNextHopTrigger = enabled;
   }
 
-private: // registry
-  typedef std::function<unique_ptr<Strategy>(Forwarder& forwarder, const Name& strategyName)> CreateFunc;
-  typedef std::map<Name, CreateFunc> Registry; // indexed by strategy name
-
+private:
   static Registry&
   getRegistry();
 

@@ -96,6 +96,8 @@ def configure(conf):
     conf.check_cfg(package='libndn-cxx', args=['--cflags', '--libs'], uselib_store='NDN_CXX',
                    pkg_config_path=os.environ.get('PKG_CONFIG_PATH', '%s/pkgconfig' % conf.env.LIBDIR))
 
+    conf.check(lib='dl')
+
     if not conf.options.without_systemd:
         conf.check_cfg(package='libsystemd', args=['--cflags', '--libs'],
                        uselib_store='SYSTEMD', mandatory=False)
@@ -176,10 +178,9 @@ def build(bld):
                                        'daemon/main.cpp',
                                        'daemon/fw/plugin-strategy.cpp']),
                                        #, 'daemon/fw/*strategy*.cpp']),
-        use='core-objects',
+        use='core-objects DL',
         includes='daemon',
         export_includes='daemon')
-
 
     if bld.env.HAVE_LIBPCAP:
         nfd_objects.source += bld.path.ant_glob('daemon/face/*ethernet*.cpp')
@@ -201,13 +202,21 @@ def build(bld):
                 source='daemon/main.cpp',
                 use='daemon-objects SYSTEMD')
 
+    # If strategy.cpp is not added, then we get undefined symbol: _ZTIN3nfd2fw8StrategyE
+    # as dlerror after doing dlopen
+    # daemon/table/measurements-accessor.cpp: undefined symbol: _ZN3nfd12measurements20MeasurementsAccessorC1ERNS0_12MeasurementsERKNS_15strategy_choice14StrategyChoiceERKNS_2fw8StrategyE
+    # Link with ndn-cxx to solve symbol lookup error for boost log
     bld.shlib(name='nfd-strategy',
               vnum=VERSION_BASE,
               cnum=VERSION_BASE,
               target='strategy-plugins/nfd-strategy',
-              source=bld.path.ant_glob('daemon/fw/plugin-strategy.cpp'),
+              source=bld.path.ant_glob(['daemon/fw/plugin-strategy.cpp',
+                                        'daemon/fw/strategy.cpp',
+                                        'daemon/table/measurements-accessor.cpp']),
               includes='daemon .',
-              install_path='{}/{}'.format(bld.env.LIBDIR, "nfd-strategy-plugins"))
+              export_includes='.',
+              install_path='{}/{}'.format(bld.env.LIBDIR, 'nfd-strategy-plugins'),
+              use='NDN_CXX')
 
     bld.recurse('tools')
     bld.recurse('tests')

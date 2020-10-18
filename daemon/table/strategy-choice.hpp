@@ -119,6 +119,9 @@ public: // Strategy Choice table
   InsertResult
   insert(const Name& prefix, const Name& strategyName);
 
+  InsertResult
+  insertStratFromLoaded(const Name& prefix, const Name& strategyName);
+
   /** \brief Make prefix to inherit strategy from its parent
    *  \note Not allowed for root prefix (ndn:/)
    */
@@ -175,6 +178,9 @@ public: // enumeration
     return this->getRange().end();
   }
 
+  void
+  insertNewStrategy(const ndn::Name& name, std::unique_ptr<fw::Strategy> strategy);
+
 private:
   void
   changeStrategy(Entry& entry,
@@ -194,6 +200,7 @@ private:
   Forwarder& m_forwarder;
   NameTree& m_nameTree;
   size_t m_nItems = 0;
+  std::map<Name, std::unique_ptr<fw::Strategy>> m_loadedStrategies;
 };
 
 std::ostream&

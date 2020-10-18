@@ -37,6 +37,9 @@ namespace fw {
 
 NFD_LOG_INIT(Strategy);
 
+int g_test1 = 0;
+
+// If we call this from an extern C function, a different registry is returned
 Strategy::Registry&
 Strategy::getRegistry()
 {
@@ -47,8 +50,10 @@ Strategy::getRegistry()
 Strategy::Registry::const_iterator
 Strategy::find(const Name& instanceName)
 {
-  const Registry& registry = getRegistry();
+  Registry& registry = getRegistry();
   ParsedInstanceName parsed = parseInstanceName(instanceName);
+
+  //registry["/localhost/nfd/strategy/plugin/%FD%01"] = nullptr;
 
   if (parsed.version) {
     // specified version: find exact or next higher version
@@ -85,6 +90,7 @@ Strategy::find(const Name& instanceName)
 bool
 Strategy::canCreate(const Name& instanceName)
 {
+  NFD_LOG_DEBUG("Can Create..");
   return Strategy::find(instanceName) != getRegistry().end();
 }
 

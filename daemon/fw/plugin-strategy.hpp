@@ -29,9 +29,14 @@
 #include "strategy.hpp"
 #include "process-nack-traits.hpp"
 #include "retx-suppression-exponential.hpp"
+#include <string>
+#include <iostream>
+#include <experimental/filesystem>
 
 namespace nfd {
 namespace fw {
+
+const std::string SHARED_OBJECT_PATH("/usr/local/lib/nfd-strategy-plugins");
 
 /** \brief A forwarding strategy that forwards Interests to all FIB nexthops
  */
@@ -51,6 +56,9 @@ public:
   /*void
   afterReceiveNack(const FaceEndpoint& ingress, const lp::Nack& nack,
                    const shared_ptr<pit::Entry>& pitEntry) override;*/
+
+private:
+  std::vector<std::string> m_sharedObjects;
 };
 
 } // namespace fw

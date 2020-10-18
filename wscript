@@ -25,7 +25,6 @@ NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
 
 from waflib import Context, Logs, Utils
 import os, subprocess
-from pathlib import Path
 
 VERSION = '0.7.1'
 APPNAME = 'nfd'

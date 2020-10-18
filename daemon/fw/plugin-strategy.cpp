@@ -45,6 +45,14 @@ PluginStrategy::PluginStrategy(Forwarder& forwarder, const Name& name)
       "PluginStrategy does not support version " + to_string(*parsed.version)));
   }
   this->setInstanceName(makeInstanceName(name, getStrategyName()));
+
+  //quick and dirty: read all the shared object files
+  namespace fs = std::experimental::filesystem;
+  for (const auto & entry : fs::directory_iterator(SHARED_OBJECT_PATH))
+      {
+          NDN_LOG_DEBUG("Strategy shared objects: " << entry.path());
+          m_sharedObjects.push_back(entry.path());
+       }
 }
 
 const Name&

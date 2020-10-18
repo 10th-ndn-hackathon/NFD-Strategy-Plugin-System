@@ -23,31 +23,32 @@
 
 - Compile and install NFD and check that the plugin strategy, libnfd-strategy.so.0.7.1 is located at
 
-   /usr/local/lib/nfd-strategy-plugins/
+      /usr/local/lib/nfd-strategy-plugins/
 
 - Set the following logs in /usr/local/etc/ndn/nfd.conf:
 
-    PluginStrategy TRACE
-    StrategyChoice TRACE
-    Strategy TRACE
+      PluginStrategy TRACE
+      StrategyChoice TRACE
+      Strategy TRACE
 
 - Start NFD and try to set the strategy in a new terminal:
 
-    nfdc strategy set /plugin /localhost/nfd/strategy/plugin/%FD%01
+      nfdc strategy set /plugin /localhost/nfd/strategy/plugin/%FD%01
 
 - Check nfdc strategy has the line:
 
-    prefix=/plugin strategy=/localhost/nfd/strategy/plugin/%FD%01
+      prefix=/plugin strategy=/localhost/nfd/strategy/plugin/%FD%01
 
 - Send an Interest:
 
-    ndnping -c1 /plugin
+      ndnping -c1 /plugin
 
 - See the lines in cout (or NDN_LOG log if that works for you):
 
-    Received Interest /plugin/ping/12730949938297044207?MustBeFresh&Nonce=1d31d516
+      Received Interest /plugin/ping/12730949938297044207?MustBeFresh&Nonce=1d31d516
 
 - STILL WORKING ON HOW TO UPDATE VERSION OF PLUGINSTRATEGY, FIX BUG, AND, LOAD A REPLACEMENT STRATEGY
+
   - Either some bug or some problem in the shared-object!
 
 ## Future Work/Conclusion

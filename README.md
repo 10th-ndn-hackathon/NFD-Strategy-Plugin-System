@@ -33,11 +33,11 @@
 
 - Start NFD and try to set the strategy in a new terminal:
 
-      nfdc strategy set /plugin /localhost/nfd/strategy/plugin/%FD%01
+      nfdc strategy set /plugin /localhost/nfd/strategy/plugin/%FD%03
 
 - Check nfdc strategy has the line:
 
-      prefix=/plugin strategy=/localhost/nfd/strategy/plugin/%FD%01
+      prefix=/plugin strategy=/localhost/nfd/strategy/plugin/%FD%03
 
 - Send an Interest:
 
